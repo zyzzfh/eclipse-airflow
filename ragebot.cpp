@@ -1,4 +1,4 @@
-#include "globals.hpp"
+﻿#include "globals.hpp"
 #include "engine_prediction.hpp"
 #include "animations.hpp"
 #include "lagcomp.hpp"
@@ -816,20 +816,34 @@ void pre_cache_centers(int damage, std::vector<int>& hitboxes, vec3_t& predicted
 			for (auto& record : lagcomp->records)
 			{
 				float flRecordAge = flClientPredictedTime - record.sim_time;
+				bool is_air_record = !(FL_ONGROUND);
 
-				// 1. ?? GUARD: Too OLD (Stops scanning when we pass the server's limit)
+				// 1. 🛑 GUARD: Too OLD
 				if (flRecordAge > flMaxCompTime) {
 					break;
 				}
 
-				// 2. ?? GUARD: Too NEW (Prevents "Negative Ticks" and shooting the last unstable tick)
+				// 2. 🛑 GUARD: Too NEW
 				if (flRecordAge < MIN_SHOOTABLE_AGE) {
 					continue;
 				}
 
-				// 3. ?? GUARD: Animation/LC State Checks
-				if (!record.valid_lc || record.break_lc || record.shifting) {
-					continue;
+				// 3. 🛑 GUARD: Conditional State Checks
+				// Air targets are unstable. Only check for hard exploitation flags.
+				if (!is_air_record)
+				{
+					// For players on the ground, use the strict checks.
+					if (record.break_lc || record.shifting) {
+						continue;
+					}
+				}
+				else
+				{
+					// HACK FIX FOR AIR RECORDS: If they are in the air, ONLY skip if a hard break flag is set.
+					// If you have a separate air-specific animation validity flag, use it here.
+					if (record.break_lc) { // Example: Only reject if the record is explicitly broken.
+						continue;
+					}
 				}
 
 				valid_records.push_back(&record);

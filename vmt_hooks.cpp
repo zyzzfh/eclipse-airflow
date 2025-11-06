@@ -564,6 +564,7 @@ namespace hooks::vmt
 
 				RAGEBOT->auto_revolver();
 				EXPLOITS->update_instance();
+				EXPLOITS->run();
 
 				MOVEMENT->run();
 				ANTI_AIM->run_movement();
@@ -592,8 +593,6 @@ namespace hooks::vmt
 
 					MOVEMENT->run_predicted();
 					FAKE_LAG->run();
-
-					EXPLOITS->run();
 
 					ANTI_AIM->run();
 					FAKE_LAG->update_shot_cmd();
