@@ -160,6 +160,7 @@ namespace config
 		{
 			save_bool(rage, CXOR("enable"), default_config.rage.enable);
 			save_bool(rage, CXOR("resolver"), default_config.rage.resolver);
+			save_bool(rage, CXOR("backtrack"), default_config.rage.backtrack);
 			save_bool(rage, CXOR("auto_fire"), default_config.rage.auto_fire);
 			save_uint(rage, CXOR("defensive_options"), default_config.rage.defensive_options);
 			save_int(rage, CXOR("spike_amt"), default_config.rage.spike_amt);

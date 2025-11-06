@@ -234,6 +234,7 @@ struct configs_t
 
 		bool auto_fire{};
 		bool resolver{};
+		bool backtrack{};
 
 		int spike_amt{};
 		int roll_amt = 50;

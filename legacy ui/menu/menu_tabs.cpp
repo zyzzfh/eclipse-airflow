@@ -685,6 +685,7 @@ void c_menu::draw_ui_items()
 						checkbox(CXOR("Auto fire"), &g_cfg.rage.auto_fire);
 
 						checkbox(CXOR("Anti aim correction"), &g_cfg.rage.resolver);
+						checkbox(CXOR("Backtrack"), &g_cfg.rage.backtrack);
 					}
 					end_child;
 

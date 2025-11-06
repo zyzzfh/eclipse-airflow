@@ -786,30 +786,83 @@ void pre_cache_centers(int damage, std::vector<int>& hitboxes, vec3_t& predicted
 
 	std::vector<anim_record_t*> valid_records;
 
-	if (start_fakelag_fix(rage->player, lagcomp))
+	// --- CRITICAL TIME CALCULATIONS (Used when backtrack is ENABLED) ---
+	auto netchannel = HACKS->engine->get_net_channel();
+
+	// 1. Calculate Max Compensation Time (MaxCompTime)
+	float flLatency = netchannel->get_latency(FLOW_OUTGOING);
+	flLatency += netchannel->get_latency(FLOW_INCOMING);
+	float flLerp = HACKS->lerp_time;
+	float flMaxUnlag = HACKS->convars.sv_maxunlag->get_float();
+	float flMaxCompTime = std::min(flMaxUnlag, flLatency + flLerp);
+
+	// 2. Define the minimum stable age (1 Tick)
+	const float MIN_SHOOTABLE_AGE = HACKS->global_vars->interval_per_tick;
+
+	// 3. Get the client's current predicted time (Crucial for synchronization)
+	float flClientPredictedTime = HACKS->predicted_time;
+	// -----------------------------------------------------------------------------
+
+	if (g_cfg.rage.backtrack) // Backtrack is ENABLED: Use full historical scan
 	{
-		valid_records.push_back(&lagcomp->records.front());
-	}
-	else
-	{
-		for (auto& record : lagcomp->records)
+		if (start_fakelag_fix(rage->player, lagcomp))
 		{
-			if (record.valid_lc)
+			// Case 1: Fakelag prediction was successful. Use the extrapolated record.
+			valid_records.push_back(&lagcomp->records.front());
+		}
+		else
+		{
+			// Case 2: Standard lag compensation (scanning historical records).
+			for (auto& record : lagcomp->records)
 			{
+				float flRecordAge = flClientPredictedTime - record.sim_time;
+
+				// 1. ?? GUARD: Too OLD (Stops scanning when we pass the server's limit)
+				if (flRecordAge > flMaxCompTime) {
+					break;
+				}
+
+				// 2. ?? GUARD: Too NEW (Prevents "Negative Ticks" and shooting the last unstable tick)
+				if (flRecordAge < MIN_SHOOTABLE_AGE) {
+					continue;
+				}
+
+				// 3. ?? GUARD: Animation/LC State Checks
+				if (!record.valid_lc || record.break_lc || record.shifting) {
+					continue;
+				}
+
 				valid_records.push_back(&record);
 			}
 		}
 	}
+	else // Backtrack is DISABLED: Only use the newest record
+	{
+		auto newest_record = &lagcomp->records.front();
 
+		// Check LC validity for the newest record before pushing.
+		if (newest_record->valid_lc)
+		{
+			valid_records.push_back(newest_record);
+		}
+	}
+
+	// ----------------------------------------------------------------------
+	// --- Scanning Collected Records (Applies to both ON and OFF states) ---
+	// ----------------------------------------------------------------------
 	for (auto current_record : valid_records)
 	{
+		// Clear and reserve points for the *current* record being scanned.
 		rage->points_to_scan.clear();
 		rage->points_to_scan.reserve(MAX_SCANNED_POINTS);
 
+		// Try getting predicted points first
 		auto predicted_hitbox_points = get_hitbox_points(damage, hitboxes, predicted_eye_pos, predicted_eye_pos, rage, current_record, true);
+
 		if (predicted_hitbox_points.empty())
 		{
-			auto hitbox_points = get_hitbox_points(damage, hitboxes, anim->eye_pos, predicted_eye_pos, rage, current_record, true);
+			// Fallback to non-predicted points or another source
+			auto hitbox_points = get_hitbox_points(damage, hitboxes, anim->eye_pos, predicted_eye_pos, rage, current_record, false);
 			for (auto& point : hitbox_points)
 			{
 				rage->points_to_scan.emplace_back(point);
@@ -817,6 +870,7 @@ void pre_cache_centers(int damage, std::vector<int>& hitboxes, vec3_t& predicted
 		}
 		else
 		{
+			// Use the successfully predicted points
 			for (auto& point : predicted_hitbox_points)
 			{
 				rage->points_to_scan.emplace_back(point);
@@ -826,6 +880,8 @@ void pre_cache_centers(int damage, std::vector<int>& hitboxes, vec3_t& predicted
 		rage->start_scans = true;
 		rage->hitscan_record = current_record;
 
+		// Restore the player's original state immediately after scanning this record
+		// (before moving to the next command or record).
 		rage->restore.restore(rage->player);
 	}
 }
