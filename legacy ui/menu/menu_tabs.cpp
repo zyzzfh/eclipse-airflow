@@ -329,7 +329,7 @@ const char* local_models[]
 	xor_strs::chams_viewmodel.c_str(),
 	xor_strs::chams_wpn.c_str(),
 	xor_strs::chams_attachments.c_str(),
-	//xor_strs::chams_fake.c_str(),
+	xor_strs::chams_fake.c_str(), //changed
 };
 
 const char* hitsound[]

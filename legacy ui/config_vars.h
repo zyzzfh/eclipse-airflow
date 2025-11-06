@@ -318,7 +318,7 @@ struct configs_t
 		  chams_t{ false, false, 3, 100, 5, c_float_color(169, 125, 255, 100), c_float_color(168, 169, 255, 150) }, // C_VIEWMODEL
 		  chams_t{ false, false, 3, 100, 5, c_float_color(218, 125, 255, 100), c_float_color(100, 100, 100, 150) }, // C_WPN
 		  chams_t{ false, false, 3, 100, 5, c_float_color(218, 125, 255, 100), c_float_color(100, 100, 100, 150) }, // C_ATTACHMENTS
-		  chams_t{ false, false, 3, 100, 5, c_float_color(255, 255, 255, 100), c_float_color(0, 0, 0, 0) },         // C_FAKE
+		  chams_t{ false, false, 3, 100, 5, c_float_color(255, 255, 255, 100), c_float_color(100, 100, 100, 150) },         // C_FAKE
 		};
 
 		struct event_logs_t
